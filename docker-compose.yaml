@@ -1,0 +1,49 @@
+version: '3.2'
+services:
+  app:
+    container_name: tw_app
+    build:
+      context: .
+      dockerfile: Dockerfile
+    stop_signal: SIGTERM
+    volumes:
+      - ./static:/app/static
+    ports:
+      - "8000:8000"
+    networks:
+      - backend
+
+  nginx_web:
+    container_name: nginx_web
+    image: nginx
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./static:/usr/share/nginx/html
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - app
+    networks:
+      - backend
+
+  postgres:
+    container_name: postgres_tw_app
+    image: postgres
+    environment:
+      - POSTGRES_DB=fastapi
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=mysecretpassword
+      - log_destination=stderr
+      - logging_collector=on
+      - log_directory=./db/:/var/lib/postgresql/logs
+    ports:
+      - "5432:5432"
+    networks:
+      - backend
+    volumes:
+      - ./db/:/var/lib/postgresql/data
+
+networks:
+  backend:
+    driver: bridge
